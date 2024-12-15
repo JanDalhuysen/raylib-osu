@@ -26,4 +26,4 @@ mingw32-make.exe
 
 @REM Run the game
 
-my_raylib_game.exe
+main.exe
