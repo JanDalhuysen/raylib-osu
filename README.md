@@ -1,3 +1,3 @@
 # Raylib-osu
 
-![raylib-osu](raylib-osu.jpg)
+![raylib-osu](raylib-osu.png)
