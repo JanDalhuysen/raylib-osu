@@ -406,21 +406,26 @@ void showLoginScreen()
         GuiLabel((Rectangle){50, 100, 100, 20}, "Username:");
         GuiTextBox((Rectangle){150, 100, 200, 20}, username, 64, true);
 
-        GuiLabel((Rectangle){50, 150, 100, 20}, "Password:");
-        GuiTextBox((Rectangle){150, 150, 200, 20}, password, 64, true);
+        // GuiLabel((Rectangle){50, 150, 100, 20}, "Password:");
+        // GuiTextBox((Rectangle){150, 150, 200, 20}, password, 64, true);
 
         if (GuiButton((Rectangle){150, 200, 100, 30}, "Login"))
         {
-            if (checkUserCredentials(username, password))
-            {
-                current_user = username;
-                isLoggedIn = true;
-                break;
-            }
-            else
-            {
-                loginFailed = true;
-            }
+            std::cout << username << " " << password << std::endl;
+
+            // if (checkUserCredentials(username, password))
+            // {
+            //     current_user = username;
+            //     isLoggedIn = true;
+            //     break;
+            // }
+            // else
+            // {
+            //     loginFailed = true;
+            // }
+            current_user = username;
+            isLoggedIn = true;
+            break;
         }
 
         if (GuiButton((Rectangle){150, 250, 100, 30}, "Add User"))
