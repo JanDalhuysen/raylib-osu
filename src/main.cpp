@@ -17,8 +17,6 @@
 
 #include <sqlite3.h>
 
-// #include "database.h"
-
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.hpp"
 
@@ -41,6 +39,9 @@ float time_diff = 0.0f;
 std::string current_user;
 
 sqlite3 *db;
+
+bool isLoggedIn = false;
+bool isAddingUser = false;
 
 void initializeDatabase()
 {
@@ -386,26 +387,103 @@ void osuRun()
     return;
 }
 
-void handleUserLogin()
+void showLoginScreen()
 {
-    std::string username;
-    std::string password;
+    InitWindow(400, 400, "Login");
+    SetTargetFPS(60);
 
-    std::cout << "Enter username: ";
-    std::cin >> username;
-    std::cout << "Enter password: ";
-    std::cin >> password;
+    char username[64] = "";
+    char password[64] = "";
+    bool loginFailed = false;
 
-    if (checkUserCredentials(username, password))
+    while (!WindowShouldClose())
     {
-        current_user = username;
-        std::cout << "Login successful!" << std::endl;
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        DrawText("Login", 160, 50, 20, DARKGRAY);
+
+        GuiLabel((Rectangle){50, 100, 100, 20}, "Username:");
+        GuiTextBox((Rectangle){150, 100, 200, 20}, username, 64, true);
+
+        GuiLabel((Rectangle){50, 150, 100, 20}, "Password:");
+        GuiTextBox((Rectangle){150, 150, 200, 20}, password, 64, true);
+
+        if (GuiButton((Rectangle){150, 200, 100, 30}, "Login"))
+        {
+            if (checkUserCredentials(username, password))
+            {
+                current_user = username;
+                isLoggedIn = true;
+                break;
+            }
+            else
+            {
+                loginFailed = true;
+            }
+        }
+
+        if (GuiButton((Rectangle){150, 250, 100, 30}, "Add User"))
+        {
+            isAddingUser = true;
+            break;
+        }
+
+        if (loginFailed)
+        {
+            DrawText("Login failed. Try again.", 100, 300, 20, RED);
+        }
+
+        EndDrawing();
     }
-    else
+
+    CloseWindow();
+}
+
+void showAddUserScreen()
+{
+    InitWindow(400, 400, "Add User");
+    SetTargetFPS(60);
+
+    char username[64] = "";
+    char password[64] = "";
+    bool addUserFailed = false;
+
+    while (!WindowShouldClose())
     {
-        std::cout << "Invalid credentials. Please try again." << std::endl;
-        handleUserLogin();
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        DrawText("Add User", 160, 50, 20, DARKGRAY);
+
+        GuiLabel((Rectangle){50, 100, 100, 20}, "Username:");
+        GuiTextBox((Rectangle){150, 100, 200, 20}, username, 64, true);
+
+        GuiLabel((Rectangle){50, 150, 100, 20}, "Password:");
+        GuiTextBox((Rectangle){150, 150, 200, 20}, password, 64, true);
+
+        if (GuiButton((Rectangle){150, 200, 100, 30}, "Add User"))
+        {
+            if (addUser(username, password))
+            {
+                isAddingUser = false;
+                break;
+            }
+            else
+            {
+                addUserFailed = true;
+            }
+        }
+
+        if (addUserFailed)
+        {
+            DrawText("Failed to add user. Try again.", 100, 300, 20, RED);
+        }
+
+        EndDrawing();
     }
+
+    CloseWindow();
 }
 
 int main()
@@ -413,11 +491,17 @@ int main()
     // Initialize the database
     initializeDatabase();
 
-    // Add a user
-    addUser("jan", "password");
-
-    // Handle user login
-    handleUserLogin();
+    while (!isLoggedIn)
+    {
+        if (isAddingUser)
+        {
+            showAddUserScreen();
+        }
+        else
+        {
+            showLoginScreen();
+        }
+    }
 
     InitWindow(400, 400, "Raylib osu!");
     SetTargetFPS(120);
