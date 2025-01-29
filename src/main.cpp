@@ -5,6 +5,7 @@
 #include <math.h>
 #include <time.h>
 
+#include <string.h>
 #include <string>
 
 #include <iostream>
@@ -153,15 +154,8 @@ void saveUserScore(const std::string &username, int score)
 
     sqlite3_finalize(stmt);
 
-    // Construct the JSON data
-    // std::string jsonData = "{\"username\":\"" + username + "\",\"score\":" + std::to_string(score) + "}";
-
     // Construct the curl command
-    // std::string command = "curl -X POST -H \"Content-Type: application/json\" -d " + jsonData + " http://129.151.168.7/scores";
-
     std::string command = "curl -X POST -H \"Content-Type: application/json\" -d \"{\\\"username\\\":\\\" " + username + " \\\",\\\"score\\\":" + std::to_string(score) + "}\" http://129.151.168.7/scores";
-
-    std::cout << "Command: " << command << std::endl;
 
     // Execute the command
     int result = system(command.c_str());
@@ -195,7 +189,7 @@ void displayScores()
             y += 30;
         }
 
-        if (GuiButton((Rectangle){150, 350, 100, 30}, "Close"))
+        if (GuiButton((Rectangle){150, 350, 100, 30}, "close"))
         {
             break;
         }
@@ -580,7 +574,7 @@ int main()
 
         DrawText("Raylib osu!", 130, 100, 30, BLACK);
 
-        if (GuiButton((Rectangle){100, 175, 50, 50}, "start"))
+        if (GuiButton((Rectangle){100, 175, 200, 20}, "start"))
         {
 #ifdef _WIN32
             system("del input.wav");
@@ -604,15 +598,15 @@ int main()
             break;
         }
 
-        if (GuiButton((Rectangle){250, 175, 50, 50}, "close"))
+        if (GuiButton((Rectangle){100, 200, 200, 20}, "scores"))
+        {
+            displayScores();
+        }
+
+        if (GuiButton((Rectangle){100, 225, 200, 20}, "close"))
         {
             CloseWindow();
             break;
-        }
-
-        if (GuiButton((Rectangle){175, 250, 50, 50}, "scores"))
-        {
-            displayScores();
         }
 
         EndDrawing();
