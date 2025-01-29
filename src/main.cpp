@@ -149,6 +149,46 @@ void saveUserScore(const std::string &username, int score)
     sqlite3_finalize(stmt);
 }
 
+void displayScores()
+{
+    const char *sql = "SELECT username, score FROM scores ORDER BY score DESC;";
+    sqlite3_stmt *stmt;
+    int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
+    if (rc != SQLITE_OK)
+    {
+        std::cerr << "Failed to prepare statement: " << sqlite3_errmsg(db) << std::endl;
+        return;
+    }
+
+    InitWindow(400, 400, "Scores");
+    SetTargetFPS(60);
+
+    while (!WindowShouldClose())
+    {
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        int y = 50;
+        while (sqlite3_step(stmt) == SQLITE_ROW)
+        {
+            const unsigned char *username = sqlite3_column_text(stmt, 0);
+            int score = sqlite3_column_int(stmt, 1);
+            DrawText(TextFormat("%s: %d", username, score), 50, y, 20, DARKGRAY);
+            y += 30;
+        }
+
+        if (GuiButton((Rectangle){150, 350, 100, 30}, "Close"))
+        {
+            break;
+        }
+
+        EndDrawing();
+    }
+
+    sqlite3_finalize(stmt);
+    CloseWindow();
+}
+
 void centerWindow(int width, int height)
 {
     int monitor = GetCurrentMonitor();
@@ -550,6 +590,11 @@ int main()
         {
             CloseWindow();
             break;
+        }
+
+        if (GuiButton((Rectangle){175, 250, 50, 50}, "scores"))
+        {
+            displayScores();
         }
 
         EndDrawing();
