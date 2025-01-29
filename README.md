@@ -13,6 +13,8 @@ There is a sample input.mp3 provided.
 ### Prerequisites
 
 ```bash
+sudo apt install wget
+sudo apt install curl
 sudo apt install cmake
 sudo apt install ffmpeg
 sudo apt install aubio-tools libaubio-dev libaubio-doc
@@ -33,6 +35,8 @@ make
 ### Prerequisites
 
 ```bash
+winget install -e --id JernejSimoncic.Wget
+winget install -e --id cURL.cURL
 winget install -e --id Gyan.FFmpeg
 winget install -e --id Kitware.CMake
 ```
