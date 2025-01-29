@@ -428,11 +428,11 @@ void showLoginScreen()
             break;
         }
 
-        if (GuiButton((Rectangle){150, 250, 100, 30}, "Add User"))
-        {
-            isAddingUser = true;
-            break;
-        }
+        // if (GuiButton((Rectangle){150, 250, 100, 30}, "Add User"))
+        // {
+        //     isAddingUser = true;
+        //     break;
+        // }
 
         if (loginFailed)
         {
