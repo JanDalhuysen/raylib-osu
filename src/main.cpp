@@ -4,7 +4,8 @@
 
 #include <math.h>
 #include <time.h>
-#include <string.h>
+
+#include <string>
 
 #include <iostream>
 #include <vector>
@@ -45,7 +46,11 @@ bool isAddingUser = false;
 
 void initializeDatabase()
 {
+    // get database from 129.151.168.7/osu.db
+    system("wget -O osu.db http://129.151.168.7/osu.db");
+
     int rc = sqlite3_open("osu.db", &db);
+
     if (rc)
     {
         std::cerr << "Can't open database: " << sqlite3_errmsg(db) << std::endl;
@@ -147,6 +152,19 @@ void saveUserScore(const std::string &username, int score)
     }
 
     sqlite3_finalize(stmt);
+
+    // Construct the JSON data
+    // std::string jsonData = "{\"username\":\"" + username + "\",\"score\":" + std::to_string(score) + "}";
+
+    // Construct the curl command
+    // std::string command = "curl -X POST -H \"Content-Type: application/json\" -d " + jsonData + " http://129.151.168.7/scores";
+
+    std::string command = "curl -X POST -H \"Content-Type: application/json\" -d \"{\\\"username\\\":\\\" " + username + " \\\",\\\"score\\\":" + std::to_string(score) + "}\" http://129.151.168.7/scores";
+
+    std::cout << "Command: " << command << std::endl;
+
+    // Execute the command
+    int result = system(command.c_str());
 }
 
 void displayScores()
