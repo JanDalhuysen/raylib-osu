@@ -7,3 +7,6 @@ cmake_install.cmake
 Makefile
 input.wav
 output.wav
+osu.db
+input.mp3
+output_beats.txt
