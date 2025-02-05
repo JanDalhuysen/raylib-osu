@@ -497,6 +497,37 @@ void showLoginScreen()
     CloseWindow();
 }
 
+void download_new_song()
+{
+    InitWindow(400, 400, "Download Song");
+    SetTargetFPS(60);
+
+    char youtube_url[64] = "";
+    std::string str_youtube_url = "";
+
+    while (!WindowShouldClose())
+    {
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+
+        DrawText("Download Song", 100, 50, 20, DARKGRAY);
+
+        GuiLabel((Rectangle){50, 100, 100, 20}, "song YouTube URL:");
+        GuiTextBox((Rectangle){150, 100, 200, 20}, youtube_url, 64, true);
+
+        if (GuiButton((Rectangle){150, 200, 100, 30}, "Download"))
+        {
+            str_youtube_url = youtube_url;
+            system(("yt-dlp -x --audio-format mp3 -o input.mp3 \"" + str_youtube_url + "\" ").c_str());
+            break;
+        }
+
+        EndDrawing();
+    }
+
+    CloseWindow();
+}
+
 void showAddUserScreen()
 {
     InitWindow(400, 400, "Add User");
@@ -577,6 +608,8 @@ int main()
         if (GuiButton((Rectangle){100, 175, 200, 20}, "start"))
         {
 #ifdef _WIN32
+            system("del input.mp3");
+            download_new_song();
             system("del input.wav");
             system("del output.wav");
             system("ffmpeg -i input.mp3 input.wav");
