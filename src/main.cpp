@@ -39,6 +39,7 @@ int score = 0;
 int streak = 0;
 float time_diff = 0.0f;
 std::string current_user;
+std::string current_song;
 
 sqlite3 *db;
 
@@ -428,6 +429,12 @@ void osuRun()
         EndDrawing();
     }
 
+    // Get the current song name from current_song.txt
+    std::ifstream songFile("current_song.txt");
+    std::getline(songFile, current_song);
+
+    std::cout << "Current song: " << current_song << std::endl;
+
     // Save the user's score in the database
     saveUserScore(current_user, score);
 
@@ -496,13 +503,16 @@ void download_new_song()
 #ifdef __linux__
             // linux code goes here
             system(("./yt-dlp -x --audio-format mp3 -o input.mp3 \"" + str_youtube_url + "\" ").c_str());
+            system(("./yt-dlp --simulate --print \"%(title)s\" \"" + str_youtube_url + "\" > current_song.txt").c_str());
 
 #elif _WIN32
             // windows code goes here
             system(("yt-dlp -x --audio-format mp3 -o input.mp3 \"" + str_youtube_url + "\" ").c_str());
+            system(("yt-dlp --simulate --print \"%(title)s\" \"" + str_youtube_url + "\" > current_song.txt").c_str());
 
 #else
             system(("./yt-dlp -x --audio-format mp3 -o input.mp3 \"" + str_youtube_url + "\" ").c_str());
+            system(("./yt-dlp --simulate --print \"%(title)s\" \"" + str_youtube_url + "\" > current_song.txt").c_str());
 
 #endif
             break;
@@ -559,6 +569,7 @@ int main(int argc, char *argv[])
             if (has_url == true)
             {
                 system(("./yt-dlp -x --audio-format mp3 -o input.mp3 \"" + std::string(argv[1]) + "\" ").c_str());
+                system(("./yt-dlp --simulate --print \"%(title)s\" \"" + std::string(argv[1]) + "\" > current_song.txt").c_str());
             }
             system("ffmpeg -i input.mp3 input.wav");
             system("ffmpeg -i input.wav -ar 44100 output.wav");
@@ -575,6 +586,7 @@ int main(int argc, char *argv[])
             if (has_url == true)
             {
                 system(("yt-dlp -x --audio-format mp3 -o input.mp3 \"" + std::string(argv[1]) + "\" ").c_str());
+                system(("yt-dlp --simulate --print \"%(title)s\" \"" + std::string(argv[1]) + "\" > current_song.txt").c_str());
             }
             system("ffmpeg -i input.mp3 input.wav");
             system("ffmpeg -i input.wav -ar 44100 output.wav");
@@ -590,6 +602,7 @@ int main(int argc, char *argv[])
             if (has_url == true)
             {
                 system(("./yt-dlp -x --audio-format mp3 -o input.mp3 \"" + std::string(argv[1]) + "\" ").c_str());
+                system(("./yt-dlp --simulate --print \"%(title)s\" \"" + std::string(argv[1]) + "\" > current_song.txt").c_str());
             }
             system("ffmpeg -i input.mp3 input.wav");
             system("ffmpeg -i input.wav -ar 44100 output.wav");
