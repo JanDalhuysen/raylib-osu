@@ -42,6 +42,8 @@ std::string current_user;
 
 sqlite3 *db;
 
+bool has_url = false;
+
 bool isLoggedIn = false;
 bool isAddingUser = false;
 
@@ -458,39 +460,12 @@ void showLoginScreen()
         GuiLabel((Rectangle){50, 100, 100, 20}, "Username:");
         GuiTextBox((Rectangle){150, 100, 200, 20}, username, 64, true);
 
-        // GuiLabel((Rectangle){50, 150, 100, 20}, "Password:");
-        // GuiTextBox((Rectangle){150, 150, 200, 20}, password, 64, true);
-
         if (GuiButton((Rectangle){150, 200, 100, 30}, "Login"))
         {
-            std::cout << username << " " << password << std::endl;
-
-            // if (checkUserCredentials(username, password))
-            // {
-            //     current_user = username;
-            //     isLoggedIn = true;
-            //     break;
-            // }
-            // else
-            // {
-            //     loginFailed = true;
-            // }
             current_user = username;
             isLoggedIn = true;
             break;
         }
-
-        // if (GuiButton((Rectangle){150, 250, 100, 30}, "Add User"))
-        // {
-        //     isAddingUser = true;
-        //     break;
-        // }
-
-        if (loginFailed)
-        {
-            DrawText("Login failed. Try again.", 100, 300, 20, RED);
-        }
-
         EndDrawing();
     }
 
@@ -518,7 +493,18 @@ void download_new_song()
         if (GuiButton((Rectangle){150, 200, 100, 30}, "Download"))
         {
             str_youtube_url = youtube_url;
+#ifdef __linux__
+            // linux code goes here
+            system(("./yt-dlp -x --audio-format mp3 -o input.mp3 \"" + str_youtube_url + "\" ").c_str());
+
+#elif _WIN32
+            // windows code goes here
             system(("yt-dlp -x --audio-format mp3 -o input.mp3 \"" + str_youtube_url + "\" ").c_str());
+
+#else
+            system(("./yt-dlp -x --audio-format mp3 -o input.mp3 \"" + str_youtube_url + "\" ").c_str());
+
+#endif
             break;
         }
 
@@ -528,77 +514,31 @@ void download_new_song()
     CloseWindow();
 }
 
-void showAddUserScreen()
+int main(int argc, char *argv[])
 {
-    InitWindow(400, 400, "Add User");
-    SetTargetFPS(60);
-
-    char username[64] = "";
-    char password[64] = "";
-    bool addUserFailed = false;
-
-    while (!WindowShouldClose())
+    if (argc == 1)
     {
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
-
-        DrawText("Add User", 160, 50, 20, DARKGRAY);
-
-        GuiLabel((Rectangle){50, 100, 100, 20}, "Username:");
-        GuiTextBox((Rectangle){150, 100, 200, 20}, username, 64, true);
-
-        GuiLabel((Rectangle){50, 150, 100, 20}, "Password:");
-        GuiTextBox((Rectangle){150, 150, 200, 20}, password, 64, true);
-
-        if (GuiButton((Rectangle){150, 200, 100, 30}, "Add User"))
-        {
-            if (addUser(username, password))
-            {
-                isAddingUser = false;
-                break;
-            }
-            else
-            {
-                addUserFailed = true;
-            }
-        }
-
-        if (addUserFailed)
-        {
-            DrawText("Failed to add user. Try again.", 100, 300, 20, RED);
-        }
-
-        EndDrawing();
+        has_url = false;
     }
-
-    CloseWindow();
-}
-
-int main()
-{
+    if (argc == 2)
+    {
+        has_url = true;
+    }
     // Initialize the database
     initializeDatabase();
-
-    while (!isLoggedIn)
-    {
-        if (isAddingUser)
-        {
-            showAddUserScreen();
-        }
-        else
-        {
-            showLoginScreen();
-        }
-    }
+    showLoginScreen();
 
     InitWindow(400, 400, "Raylib osu!");
+
     SetTargetFPS(120);
 
     InitAudioDevice();
+
     key_press_1 = LoadSound("key-press-1.mp3");
 
     while (!WindowShouldClose())
     {
+
         BeginDrawing();
 
         ClearBackground(GetColor(GuiGetStyle(DEFAULT, BACKGROUND_COLOR)));
@@ -607,22 +547,54 @@ int main()
 
         if (GuiButton((Rectangle){100, 175, 200, 20}, "start"))
         {
-#ifdef _WIN32
-            system("del input.mp3");
-            download_new_song();
-            system("del input.wav");
-            system("del output.wav");
-            system("ffmpeg -i input.mp3 input.wav");
-            system("ffmpeg -i input.wav -ar 44100 output.wav");
-            system("wav_to_beats.exe output.wav > output_beats.txt");
-#endif
-
 #ifdef __linux__
+            // linux code goes here
+            system("rm -f input.mp3");
             system("rm -f input.wav");
             system("rm -f output.wav");
+            if (has_url == false)
+            {
+                download_new_song();
+            }
+            if (has_url == true)
+            {
+                system(("./yt-dlp -x --audio-format mp3 -o input.mp3 \"" + std::string(argv[1]) + "\" ").c_str());
+            }
             system("ffmpeg -i input.mp3 input.wav");
             system("ffmpeg -i input.wav -ar 44100 output.wav");
             system("./wav_to_beats output.wav > output_beats.txt");
+#elif _WIN32
+            // windows code goes here
+            system("del input.mp3");
+            system("del input.wav");
+            system("del output.wav");
+            if (has_url == false)
+            {
+                download_new_song();
+            }
+            if (has_url == true)
+            {
+                system(("yt-dlp -x --audio-format mp3 -o input.mp3 \"" + std::string(argv[1]) + "\" ").c_str());
+            }
+            system("ffmpeg -i input.mp3 input.wav");
+            system("ffmpeg -i input.wav -ar 44100 output.wav");
+            system("wav_to_beats.exe output.wav > output_beats.txt");
+#else
+            system("rm -f input.mp3");
+            system("rm -f input.wav");
+            system("rm -f output.wav");
+            if (has_url == false)
+            {
+                download_new_song();
+            }
+            if (has_url == true)
+            {
+                system(("./yt-dlp -x --audio-format mp3 -o input.mp3 \"" + std::string(argv[1]) + "\" ").c_str());
+            }
+            system("ffmpeg -i input.mp3 input.wav");
+            system("ffmpeg -i input.wav -ar 44100 output.wav");
+            system("./wav_to_beats output.wav > output_beats.txt");
+
 #endif
 
             InitWindow(1280, 720, "Raylib osu!");
