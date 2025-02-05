@@ -70,6 +70,7 @@ void initializeDatabase()
                                     "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                                     "username TEXT NOT NULL,"
                                     "score INTEGER NOT NULL,"
+                                    "song TEXT NOT NULL,"
                                     "FOREIGN KEY(username) REFERENCES users(username));";
 
     char *errMsg = nullptr;
@@ -135,9 +136,9 @@ bool checkUserCredentials(const std::string &username, const std::string &passwo
     return result;
 }
 
-void saveUserScore(const std::string &username, int score)
+void saveUserScore(const std::string &username, int score, const std::string &song)
 {
-    const char *sql = "INSERT INTO scores (username, score) VALUES (?, ?);";
+    const char *sql = "INSERT INTO scores (username, score, song) VALUES (?, ?, ?);";
     sqlite3_stmt *stmt;
     int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
     if (rc != SQLITE_OK)
@@ -148,6 +149,7 @@ void saveUserScore(const std::string &username, int score)
 
     sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
     sqlite3_bind_int(stmt, 2, score);
+    sqlite3_bind_text(stmt, 3, song.c_str(), -1, SQLITE_STATIC);
 
     rc = sqlite3_step(stmt);
     if (rc != SQLITE_DONE)
@@ -158,7 +160,7 @@ void saveUserScore(const std::string &username, int score)
     sqlite3_finalize(stmt);
 
     // Construct the curl command
-    std::string command = "curl -X POST -H \"Content-Type: application/json\" -d \"{\\\"username\\\":\\\" " + username + " \\\",\\\"score\\\":" + std::to_string(score) + "}\" http://129.151.168.7/scores";
+    std::string command = "curl -X POST -H \"Content-Type: application/json\" -d \"{\\\"username\\\":\\\" " + username + " \\\",\\\"score\\\":" + std::to_string(score) + ",\\\"song\\\":\\\"" + song + "\\\"}\" http://129.151.168.7/scores";
 
     // Execute the command
     int result = system(command.c_str());
@@ -166,7 +168,7 @@ void saveUserScore(const std::string &username, int score)
 
 void displayScores()
 {
-    const char *sql = "SELECT username, score FROM scores ORDER BY score DESC;";
+    const char *sql = "SELECT username, score, song FROM scores ORDER BY song, score DESC;";
     sqlite3_stmt *stmt;
     int rc = sqlite3_prepare_v2(db, sql, -1, &stmt, nullptr);
     if (rc != SQLITE_OK)
@@ -188,7 +190,8 @@ void displayScores()
         {
             const unsigned char *username = sqlite3_column_text(stmt, 0);
             int score = sqlite3_column_int(stmt, 1);
-            DrawText(TextFormat("%s: %d", username, score), 50, y, 20, DARKGRAY);
+            const unsigned char *song = sqlite3_column_text(stmt, 2);
+            DrawText(TextFormat("%s: %d (%s)", username, score, song), 50, y, 20, DARKGRAY);
             y += 30;
         }
 
@@ -436,7 +439,7 @@ void osuRun()
     std::cout << "Current song: " << current_song << std::endl;
 
     // Save the user's score in the database
-    saveUserScore(current_user, score);
+    saveUserScore(current_user, score, current_song);
 
     // Unload the music
     UnloadMusicStream(music);
