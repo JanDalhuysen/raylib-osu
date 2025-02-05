@@ -5,3 +5,5 @@ CPackConfig.cmake
 CPackSourceConfig.cmake
 cmake_install.cmake
 Makefile
+input.wav
+output.wav
