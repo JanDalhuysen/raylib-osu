@@ -1,0 +1,32 @@
+* text=auto eol=lf
+
+*.sh text eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Image
+*.png binary
+*.jpg binary
+*.jpeg binary
+
+# Video
+*.mov binary
+*.mp4 binary
+
+# Audio
+*.mp3 binary
+*.m4a binary
+*.wav binary
+
+# a
+*.a binary
+
+# dll
+*.dll binary
+
+# db
+*.db binary
+
+# exe
+*.exe binary

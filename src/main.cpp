@@ -1,6 +1,6 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 
 #include <math.h>
 #include <time.h>
@@ -42,6 +42,8 @@ std::string current_user;
 std::string current_song;
 
 sqlite3 *db;
+
+const float GRACE_PERIOD = 0.5f; // seconds circles linger after max_time
 
 bool has_url = false;
 
@@ -160,7 +162,9 @@ void saveUserScore(const std::string &username, int score, const std::string &so
     sqlite3_finalize(stmt);
 
     // Construct the curl command
-    std::string command = "curl -X POST -H \"Content-Type: application/json\" -d \"{\\\"username\\\":\\\" " + username + " \\\",\\\"score\\\":" + std::to_string(score) + ",\\\"song\\\":\\\"" + song + "\\\"}\" http://129.151.168.7/scores";
+    std::string command = "curl -X POST -H \"Content-Type: application/json\" -d \"{\\\"username\\\":\\\" " + username +
+                          " \\\",\\\"score\\\":" + std::to_string(score) + ",\\\"song\\\":\\\"" + song +
+                          "\\\"}\" http://129.151.168.7/scores";
 
     // Execute the command
     int result = system(command.c_str());
@@ -223,24 +227,32 @@ void osuUpdate(std::vector<Circle> &circles, float elapsed_time, float dt)
     for (auto it = circles.begin(); it != circles.end();)
     {
         it->elapsed_time += dt;
-        if (it->elapsed_time >= it->max_time)
+        if (it->elapsed_time >= it->max_time + GRACE_PERIOD)
         {
+            streak = 0; // missed circle resets streak
             it = circles.erase(it);
         }
         else
         {
-            if (it->elapsed_time >= it->start_time)
+            if (it->elapsed_time >= it->start_time && it->elapsed_time <= it->max_time)
             {
-                // Update alpha based on elapsed time since start_time
+                // Fade in during approach
                 float alpha = ((it->elapsed_time - it->start_time) / (it->max_time - it->start_time)) * 255;
                 it->color.a = (unsigned char)alpha;
+            }
+            else if (it->elapsed_time > it->max_time)
+            {
+                // Fade out during grace period
+                float grace_t = (it->elapsed_time - it->max_time) / GRACE_PERIOD;
+                it->color.a = (unsigned char)(255.0f * (1.0f - grace_t));
             }
             ++it;
         }
     }
 
     // Check for click and remove circles
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) || IsKeyPressed(KEY_Z) || IsKeyPressed(KEY_X) || IsKeyPressed(KEY_SPACE))
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsMouseButtonPressed(MOUSE_RIGHT_BUTTON) || IsKeyPressed(KEY_Z) ||
+        IsKeyPressed(KEY_X) || IsKeyPressed(KEY_SPACE))
     {
         Vector2 mouse = GetMousePosition();
         for (auto it = circles.begin(); it != circles.end();)
@@ -274,7 +286,7 @@ void osuUpdate(std::vector<Circle> &circles, float elapsed_time, float dt)
 
 void osuRun()
 {
-    DisableCursor();
+    // DisableCursor();
 
     // Load the music file
     Music music = LoadMusicStream("output.wav");
@@ -313,8 +325,8 @@ void osuRun()
         float random_x = (float)GetRandomValue(-100, 100);
         float random_y = (float)GetRandomValue(-100, 100);
 
-        pre_x += random_x;
-        pre_y += random_y;
+        pre_x += random_x * 2;
+        pre_y += random_y * 2;
 
         // Playable area is play_widthxplay_height
         if (pre_x < play_x)
@@ -337,12 +349,10 @@ void osuRun()
         Circle circle;
         circle.position = {pre_x, pre_y};
         circle.radius = radius;
-        circle.color = (Color){
-            (unsigned char)GetRandomValue(50, 255),
-            (unsigned char)GetRandomValue(50, 255),
-            (unsigned char)GetRandomValue(50, 255),
-            // Start with alpha = 0
-            0};
+        circle.color = (Color){(unsigned char)GetRandomValue(50, 255), (unsigned char)GetRandomValue(50, 255),
+                               (unsigned char)GetRandomValue(50, 255),
+                               // Start with alpha = 0
+                               0};
         circle.elapsed_time = 0.0f;
         circle.max_time = time;
         // Appear 1 seconds before end
@@ -386,10 +396,13 @@ void osuRun()
                     // Draw the circle
                     DrawCircleV(circle.position, circle.radius, circle.color);
 
-                    // Calculate and draw the shrinking ring
-                    float t = (circle.elapsed_time - circle.start_time) / (circle.max_time - circle.start_time);
-                    float ring_radius = circle.radius + circle.radius * 0.5f * (1.0f - t); // Starts larger
-                    DrawCircleLines((int)circle.position.x, (int)circle.position.y, ring_radius, WHITE);
+                    if (circle.elapsed_time <= circle.max_time)
+                    {
+                        // Calculate and draw the shrinking ring during approach
+                        float t = (circle.elapsed_time - circle.start_time) / (circle.max_time - circle.start_time);
+                        float ring_radius = circle.radius + circle.radius * 0.5f * (1.0f - t); // Starts larger
+                        DrawCircleLines((int)circle.position.x, (int)circle.position.y, ring_radius, WHITE);
+                    }
                 }
             }
 
@@ -509,7 +522,8 @@ void download_new_song()
 #ifdef __linux__
             // linux code goes here
             system(("./yt-dlp -x --audio-format mp3 -o input.mp3 \"" + str_youtube_url + "\" ").c_str());
-            system(("./yt-dlp --simulate --print \"%(title)s\" \"" + str_youtube_url + "\" > current_song.txt").c_str());
+            system(
+                ("./yt-dlp --simulate --print \"%(title)s\" \"" + str_youtube_url + "\" > current_song.txt").c_str());
 
 #elif _WIN32
             // windows code goes here
@@ -518,7 +532,8 @@ void download_new_song()
 
 #else
             system(("./yt-dlp -x --audio-format mp3 -o input.mp3 \"" + str_youtube_url + "\" ").c_str());
-            system(("./yt-dlp --simulate --print \"%(title)s\" \"" + str_youtube_url + "\" > current_song.txt").c_str());
+            system(
+                ("./yt-dlp --simulate --print \"%(title)s\" \"" + str_youtube_url + "\" > current_song.txt").c_str());
 
 #endif
             break;
@@ -541,8 +556,8 @@ int main(int argc, char *argv[])
         has_url = true;
     }
     // Initialize the database
-    initializeDatabase();
-    showLoginScreen();
+    // initializeDatabase();
+    // showLoginScreen();
 
     InitWindow(400, 400, "Raylib osu!");
 
@@ -575,7 +590,8 @@ int main(int argc, char *argv[])
             if (has_url == true)
             {
                 system(("./yt-dlp -x --audio-format mp3 -o input.mp3 \"" + std::string(argv[1]) + "\" ").c_str());
-                system(("./yt-dlp --simulate --print \"%(title)s\" \"" + std::string(argv[1]) + "\" > current_song.txt").c_str());
+                system(("./yt-dlp --simulate --print \"%(title)s\" \"" + std::string(argv[1]) + "\" > current_song.txt")
+                           .c_str());
             }
             system("ffmpeg -i input.mp3 input.wav");
             system("ffmpeg -i input.wav -ar 44100 output.wav");
@@ -592,7 +608,8 @@ int main(int argc, char *argv[])
             if (has_url == true)
             {
                 system(("yt-dlp -x --audio-format mp3 -o input.mp3 \"" + std::string(argv[1]) + "\" ").c_str());
-                system(("yt-dlp --simulate --print \"%(title)s\" \"" + std::string(argv[1]) + "\" > current_song.txt").c_str());
+                system(("yt-dlp --simulate --print \"%(title)s\" \"" + std::string(argv[1]) + "\" > current_song.txt")
+                           .c_str());
             }
             system("ffmpeg -i input.mp3 input.wav");
             system("ffmpeg -i input.wav -ar 44100 output.wav");
@@ -608,7 +625,8 @@ int main(int argc, char *argv[])
             if (has_url == true)
             {
                 system(("./yt-dlp -x --audio-format mp3 -o input.mp3 \"" + std::string(argv[1]) + "\" ").c_str());
-                system(("./yt-dlp --simulate --print \"%(title)s\" \"" + std::string(argv[1]) + "\" > current_song.txt").c_str());
+                system(("./yt-dlp --simulate --print \"%(title)s\" \"" + std::string(argv[1]) + "\" > current_song.txt")
+                           .c_str());
             }
             system("ffmpeg -i input.mp3 input.wav");
             system("ffmpeg -i input.wav -ar 44100 output.wav");

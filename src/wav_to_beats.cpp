@@ -1,21 +1,22 @@
 // g++ -o main main.cpp -I/usr/local/include/aubio -L/usr/local/lib -laubio
 
 #include <iostream>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include <aubio/aubio.h>
 
 class BeatDetector
 {
-private:
+  private:
     uint_t sample_rate;
     uint_t hop_size;
     uint_t win_size;
 
-public:
-    BeatDetector(uint_t sr = 44100, uint_t hop = 512, uint_t win = 1024)
-        : sample_rate(sr), hop_size(hop), win_size(win) {}
+  public:
+    BeatDetector(uint_t sr = 44100, uint_t hop = 512, uint_t win = 1024) : sample_rate(sr), hop_size(hop), win_size(win)
+    {
+    }
 
     std::vector<double> detectBeats(const std::string &filename)
     {

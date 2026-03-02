@@ -2,22 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(raylib-osu)
 
-# ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
-# Clone the raylib repository and build it
-# ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
-
-include(FetchContent)
-
-set(FETCHCONTENT_QUIET FALSE)
-
-FetchContent_Declare(
-    raylib
-    GIT_REPOSITORY "https://github.com/raysan5/raylib.git"
-    GIT_TAG "master"
-    GIT_PROGRESS TRUE
-)
-
-FetchContent_MakeAvailable(raylib)
+find_package(raylib REQUIRED)
 
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
 # Include and link the aubio library
@@ -33,11 +18,6 @@ include_directories("/usr/local/include/aubio")
 link_directories("/usr/local/lib")
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-include_directories("/usr/local/include/aubio")
-link_directories("/usr/local/lib")
-endif()
-
 add_executable(wav_to_beats "${CMAKE_CURRENT_LIST_DIR}/src/wav_to_beats.cpp")
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -48,8 +28,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 target_link_libraries(wav_to_beats aubio)
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-target_link_libraries(wav_to_beats aubio)
+# ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+# Build send_key utility for sending keyboard input (Windows only)
+# ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+add_executable(send_key "${CMAKE_CURRENT_LIST_DIR}/src/send_key.cpp")
 endif()
 
 # ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
@@ -62,11 +46,6 @@ link_directories("${CMAKE_CURRENT_LIST_DIR}/lib/sqlite3")
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-include_directories("/usr/include/sqlite3")
-link_directories("/usr/lib")
-endif()
-
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 include_directories("/usr/include/sqlite3")
 link_directories("/usr/lib")
 endif()
@@ -86,10 +65,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE raylib sqlite3.dll)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-target_link_libraries(${PROJECT_NAME} PRIVATE raylib sqlite3)
-endif()
-
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib sqlite3)
 endif()
 
